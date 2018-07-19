@@ -2,7 +2,7 @@
  * Created by vadimdez on 21/06/16.
  */
 import {
-  Component, Input, Output, ElementRef, EventEmitter, OnChanges, SimpleChanges, OnInit, HostListener
+  Component, Input, Output, ElementRef, EventEmitter, OnChanges, SimpleChanges, OnInit, HostListener, OnDestroy
 } from '@angular/core';
 import { PDFDocumentProxy, PDFViewerParams, PDFPageProxy, PDFSource, PDFProgressData, PDFPromise } from 'pdfjs-dist';
 let PDFJS: any;
@@ -25,13 +25,14 @@ if (!isSSR()) {
   styleUrls: ['./pdf-viewer.component.scss']
 })
 
-export class PdfViewerComponent implements OnChanges, OnInit {
+export class PdfViewerComponent implements OnChanges, OnInit, OnDestroy {
   static CSS_UNITS: number = 96.0 / 72.0;
 
   public pdfLinkService: any;
   public pdfViewer: any;
   public pdfFindController: any;
 
+  private _cMapsUrl: string = `https://unpkg.com/pdfjs-dist@${ (PDFJS as any).version }/cmaps/`;
   private _renderText: boolean = true;
   private _stickToPage: boolean = false;
   private _originalSize: boolean = true;
@@ -74,6 +75,12 @@ export class PdfViewerComponent implements OnChanges, OnInit {
     }
   }
 
+  ngOnDestroy() {
+    if (this._pdf) {
+      this._pdf.destroy();
+    }
+  }
+
   @HostListener('window:resize', [])
   public onPageResize() {
     if (!this._canAutoResize || !this._pdf) {
@@ -110,6 +117,11 @@ export class PdfViewerComponent implements OnChanges, OnInit {
 
   @Input()
   src: string | Uint8Array | PDFSource;
+
+  @Input('c-maps-url')
+  set cMapsUrl(cMapsUrl: string) {
+    this._cMapsUrl = cMapsUrl;
+  }
 
   @Input('page')
   set page(_page) {
@@ -259,6 +271,32 @@ export class PdfViewerComponent implements OnChanges, OnInit {
     }
   }
 
+  private getDocumentParams() {
+    let params: any = {};
+    const srcType = typeof(this.src);
+    
+    if (!this._cMapsUrl) {
+      return this.src;
+    }
+    
+    params = {
+      cMapUrl: this._cMapsUrl,
+      cMapPacked: true
+    };
+    
+    if (srcType === 'string') {
+      params.url = this.src;
+    } else if (srcType === 'object') {
+      if ((this.src as any).byteLength !== undefined) {
+        params.data = this.src;
+      } else {
+        Object.assign(params, this.src);
+      }
+    }
+
+    return params;
+  }
+
   private loadPDF() {
     if (!this.src) {
       return;
@@ -269,7 +307,7 @@ export class PdfViewerComponent implements OnChanges, OnInit {
       return;
     }
 
-    let loadingTask: any = (PDFJS as any).getDocument(this.src as any);
+    let loadingTask: any = (PDFJS as any).getDocument(this.getDocumentParams());
 
     loadingTask.onProgress = (progressData: PDFProgressData) => {
       this.onProgress.emit(progressData);
@@ -278,6 +316,9 @@ export class PdfViewerComponent implements OnChanges, OnInit {
     const src = this.src;
     (<PDFPromise<PDFDocumentProxy>>loadingTask.promise)
       .then((pdf: PDFDocumentProxy) => {
+        if (this._pdf) {
+          this._pdf.destroy();
+        }
         this._pdf = pdf;
         this.lastLoaded = src;
 

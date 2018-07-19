@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.1.1
+* [[#338](https://github.com/VadimDez/ng2-pdf-viewer/pull/347)] - support for non-latin characters
+* [[#324](https://github.com/VadimDez/ng2-pdf-viewer/issues/324)] - PDF preview does not display Chinese
+
+## 5.1.0
+* [[#338](https://github.com/VadimDez/ng2-pdf-viewer/pull/338)] - Upgrade dependency
+* [[#336](https://github.com/VadimDez/ng2-pdf-viewer/pull/336)] - fix: Cleanup unused pdf document proxies
+
 ## 5.0.1
 * [[#311](https://github.com/VadimDez/ng2-pdf-viewer/pull/311)] - Update pdfjs
 * [[#308](https://github.com/VadimDez/ng2-pdf-viewer/issues/308)] - Not working on IOS on both Chrome and Safari 
